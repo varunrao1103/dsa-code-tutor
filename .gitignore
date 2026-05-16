@@ -1,2 +1,40 @@
+# ── Python ──────────────────────────────────────────────
+.venv/
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# uv / pip
+uv.lock
+pip-wheel-metadata/
+
+# ── Environment variables ────────────────────────────────
 .env
+.env.*
+!.env.example
+
+# ── Frontend ─────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# ── Editor / OS ──────────────────────────────────────────
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.sw?
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────
+*.log
+logs/
+
+util/

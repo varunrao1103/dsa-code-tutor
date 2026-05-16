@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0D0D0D;
+  --color-surface: #1C1C1C;
+  --color-surface2: #222222;
+  --color-nav: #141414;
+  --color-primary: #7C3AED;
+  --color-primary-hover: #8B5CF6;
+  --color-blue: #2563EB;
+  --color-cyan: #06B6D4;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-text: #F8FAFC;
+  --color-muted: #94A3B8;
+  --color-border: #2E2E2E;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #0D0D0D 0%, #141414 50%, #111111 100%);
+  background-attachment: fixed;
+  color: #F8FAFC;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-image: radial-gradient(circle at top left, rgba(124,58,237,0.15), transparent 30%);
+}
+
+/* scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2E2E2E;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8B5CF6;
+}
+
+/* ── LeetCode problem HTML content styles ── */
+.problem-content p { margin: 0.6em 0; }
+.problem-content ul, .problem-content ol { padding-left: 1.4em; margin: 0.5em 0; }
+.problem-content li { margin: 0.25em 0; }
+.problem-content pre {
+  background: #141414;
+  border: 1px solid #2E2E2E;
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', monospace;
+  margin: 0.5em 0;
+}
+.problem-content code {
+  background: #1C1C1C;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', monospace;
+  color: #8B5CF6;
+}
+.problem-content pre code {
+  background: none;
+  padding: 0;
+  color: #E2E8F0;
+}
+.problem-content strong { color: #F8FAFC; }
+.problem-content a { color: #8B5CF6; text-decoration: underline; }
+
+/* ── Glass card utility ── */
+.glass-card {
+  background: rgba(28, 28, 28, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(46, 46, 46, 0.6);
+  box-shadow: 0 0 0 1px rgba(124,58,237,0.3), 0 0 20px rgba(124,58,237,0.15);
+}
