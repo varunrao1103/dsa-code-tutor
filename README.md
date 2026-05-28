@@ -1,6 +1,16 @@
 # DSA Code Tutor
 
-An AI-powered coding tutor for Data Structures & Algorithms. Paste a problem, write your solution, and get contextual hints or a full optimal solution — powered by Groq LLMs.
+![DSA Code Tutor](frontend/public/app-image.jpeg)
+
+An AI-powered coding tutor for Data Structures & Algorithms. Browse real LeetCode problems, write your solution, and get contextual hints or a full optimal solution — powered by Groq LLMs.
+
+## Features
+
+- **LeetCode Problem Browser** — Browse and filter problems by 25 DSA topics (Array, Tree, DP, Graph, and more) using the LeetCode GraphQL API
+- **AI Tutor (Socratic style)** — Ask for hints or solutions; the tutor guides you rather than giving answers away, with full conversational context across turns
+- **Live Code Execution** — Run Python and Java code directly in the browser; results appear instantly in the output panel
+- **Structured LLM Responses** — Every AI response includes a main reply, optional code suggestion, explanation, and misconception callout
+- **3-panel IDE layout** — Resizable columns for problem description, code editor (Monaco), and chat panel
 
 ## Tech Stack
 
@@ -76,7 +86,7 @@ npm run dev
 
 Open `http://localhost:5173` in your browser.
 
-> Vite proxies `/hints`, `/solution`, and `/run` to the backend automatically — no CORS issues.
+> Vite proxies `/ask-dsa`, `/run`, and `/leetcode` to the backend automatically — no CORS issues.
 
 ---
 
@@ -85,21 +95,27 @@ Open `http://localhost:5173` in your browser.
 ```
 dsa-code-tutor/
 ├── backend/
-│   ├── main.py        # FastAPI app — /hints, /solution, /run endpoints
+│   ├── main.py        # FastAPI app — /ask-dsa, /run, /leetcode endpoints
 │   ├── schemas.py     # Pydantic request/response models
-│   └── tutor.py       # LangGraph agent logic
+│   └── tutor.py       # LangChain LLM logic with message history
 ├── frontend/
 │   └── src/
-│       ├── App.jsx                  # Root layout (3-panel)
+│       ├── App.jsx                  # Router setup (ProblemsPage / SolverPage)
 │       ├── api.js                   # Fetch wrappers for backend
-│       ├── languages.js             # Supported languages config
+│       ├── languages.js             # Supported languages config + default templates
+│       ├── topics.js                # 25 DSA topic definitions for filtering
+│       ├── pages/
+│       │   ├── ProblemsPage.jsx     # Problem browser with topic sidebar
+│       │   └── SolverPage.jsx       # 3-panel solver UI with resizable columns
 │       └── components/
+│           ├── ChatPanel.jsx        # Conversational AI chat with message history
 │           ├── CodeEditor.jsx       # Monaco editor wrapper
-│           ├── HintsPanel.jsx       # Hints display
 │           ├── LanguageSelector.jsx # Language pill toggle
-│           ├── OutputPanel.jsx      # Terminal output display
-│           ├── ProblemInput.jsx     # Problem statement textarea
-│           └── SolutionPanel.jsx    # Solution + complexity display
+│           ├── Navbar.jsx           # Top navigation bar
+│           ├── OutputPanel.jsx      # Code execution results display
+│           ├── ProblemDisplay.jsx   # Problem statement renderer
+│           ├── ProblemInput.jsx     # Custom problem input form
+│           └── ProblemRow.jsx       # Problem list row with difficulty badge
 ├── util/                # Scratch/exploration scripts
 ├── pyproject.toml       # Python project & dependency config
 └── .env                 # API keys (not committed)
@@ -111,9 +127,10 @@ dsa-code-tutor/
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/hints` | Analyse user code and return hints |
-| POST | `/solution` | Return optimal solution with explanation |
-| POST | `/run` | Execute code (Python or Java) and return output |
+| GET | `/leetcode/problems?tag=&skip=&limit=` | Fetch paginated LeetCode problems by topic |
+| GET | `/leetcode/problem/{titleSlug}` | Fetch full problem description and test cases |
+| POST | `/ask-dsa` | Send problem + code + chat history; receive hints or solution |
+| POST | `/run` | Execute code (Python or Java) and return stdout/stderr |
 
 ---
 
