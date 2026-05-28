@@ -1,15 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
+<<<<<<< HEAD
 import { getHints, getSolution, runCode, getLeetCodeProblem } from '../api'
 import { DEFAULT_LANGUAGE } from '../languages'
 import ProblemDisplay from '../components/ProblemDisplay'
 import CodeEditor from '../components/CodeEditor'
 import HintsPanel from '../components/HintsPanel'
 import SolutionPanel from '../components/SolutionPanel'
+=======
+import { runCode, getLeetCodeProblem } from '../api'
+import { DEFAULT_LANGUAGE } from '../languages'
+import ProblemDisplay from '../components/ProblemDisplay'
+import CodeEditor from '../components/CodeEditor'
+import ChatPanel from '../components/ChatPanel'
+>>>>>>> 2d4e634 (shifting ai tech from langGraph to langchain and adding chat UI)
 import LanguageSelector from '../components/LanguageSelector'
 import OutputPanel from '../components/OutputPanel'
 
 
+<<<<<<< HEAD
 function Spinner() {
   return (
     <div className="flex items-center gap-2 py-6 px-4">
@@ -29,6 +38,8 @@ function htmlToText(html) {
   }
 }
 
+=======
+>>>>>>> 2d4e634 (shifting ai tech from langGraph to langchain and adding chat UI)
 export default function SolverPage() {
   const { titleSlug } = useParams()
 
@@ -43,6 +54,7 @@ export default function SolverPage() {
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE)
   const [code, setCode] = useState(DEFAULT_LANGUAGE.defaultCode)
 
+<<<<<<< HEAD
   // AI state
   const [hintsData, setHintsData] = useState(null)
   const [solutionData, setSolutionData] = useState(null)
@@ -53,6 +65,14 @@ export default function SolverPage() {
   const [hintsError, setHintsError] = useState(null)
   const [solutionError, setSolutionError] = useState(null)
   const [activeTab, setActiveTab] = useState('hints')
+=======
+  // Run state
+  const [runResult, setRunResult] = useState(null)
+  const [loadingRun, setLoadingRun] = useState(false)
+
+  // Chat panel
+  const [isChatOpen, setIsChatOpen] = useState(false)
+>>>>>>> 2d4e634 (shifting ai tech from langGraph to langchain and adding chat UI)
 
   // Load problem from LeetCode on mount
   useEffect(() => {
@@ -69,10 +89,13 @@ export default function SolverPage() {
       .finally(() => setProblemLoading(false))
   }, [titleSlug])
 
+<<<<<<< HEAD
   // Auto-switch tabs when data arrives
   useEffect(() => { if (hintsData) setActiveTab('hints') }, [hintsData])
   useEffect(() => { if (solutionData) setActiveTab('solution') }, [solutionData])
 
+=======
+>>>>>>> 2d4e634 (shifting ai tech from langGraph to langchain and adding chat UI)
   function handleLanguageChange(lang) {
     setLanguage(lang)
     setCode(lang.defaultCode)
@@ -97,6 +120,7 @@ export default function SolverPage() {
     }
   }
 
+<<<<<<< HEAD
   async function handleGetHints() {
     setHintsError(null)
     setHintsData(null)
@@ -131,6 +155,8 @@ export default function SolverPage() {
 
   const canAI = !problemLoading && !!problemContent && !problemError
 
+=======
+>>>>>>> 2d4e634 (shifting ai tech from langGraph to langchain and adding chat UI)
   // ── Resizable columns ──
   const [leftWidth, setLeftWidth] = useState(340)
   const [rightWidth, setRightWidth] = useState(380)
@@ -302,6 +328,7 @@ export default function SolverPage() {
               {loadingRun ? 'Running…' : 'Run'}
             </button>
             <button
+<<<<<<< HEAD
               onClick={handleGetHints}
               disabled={!canAI || !code.trim() || loadingHints}
               style={{ background: '#92400e', border: '1px solid #d97706' }}
@@ -322,6 +349,21 @@ export default function SolverPage() {
 
 
           </div>
+=======
+              onClick={() => setIsChatOpen((v) => !v)}
+              style={{
+                background: isChatOpen ? '#3b1f72' : '#1e1030',
+                border: `1px solid ${isChatOpen ? '#7c3aed' : '#4c2d7a'}`,
+              }}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded text-sm font-semibold text-violet-300
+                         hover:brightness-110 transition-all"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Code with AI
+            </button></div>
+>>>>>>> 2d4e634 (shifting ai tech from langGraph to langchain and adding chat UI)
 
           {/* Output panel */}
           <div style={{ height: 180, background: '#141414', borderTop: '1px solid #2E2E2E' }} className="shrink-0 overflow-hidden flex flex-col">
@@ -348,6 +390,7 @@ export default function SolverPage() {
           </div>
         </main>
 
+<<<<<<< HEAD
         {/* ── RIGHT drag handle ── */}
         <div
           onMouseDown={(e) => handleDragStart('right', e)}
@@ -464,6 +507,39 @@ export default function SolverPage() {
             </div>
           )}
         </aside>
+=======
+        {/* ── RIGHT: Chat panel (conditionally rendered) ── */}
+        {isChatOpen && (
+          <>
+            <div
+              onMouseDown={(e) => handleDragStart('right', e)}
+              style={{
+                width: 5,
+                cursor: 'col-resize',
+                background: '#2E2E2E',
+                flexShrink: 0,
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#7c3aed' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#2E2E2E' }}
+            />
+            <aside
+              style={{
+                width: rightWidth,
+                minWidth: 300,
+                background: '#1C1C1C',
+              }}
+              className="flex flex-col overflow-hidden shrink-0"
+            >
+              <ChatPanel
+                problemContent={problemContent}
+                code={code}
+                onClose={() => setIsChatOpen(false)}
+              />
+            </aside>
+          </>
+        )}
+>>>>>>> 2d4e634 (shifting ai tech from langGraph to langchain and adding chat UI)
       </div>
     </div>
   )

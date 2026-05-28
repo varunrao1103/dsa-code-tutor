@@ -1,214 +1,61 @@
-from typing import TypedDict, Optional, List
-from pydantic import BaseModel
-
-from langgraph.graph import StateGraph, END
-from groq import Groq
-
+from langchain_groq import ChatGroq
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from dotenv import load_dotenv
 import os
 
+from backend.schemas import UserRequest, LLMResponse
 
 load_dotenv()
 
-
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    temperature=0,
+    api_key=os.getenv("GROQ_API_KEY"),
 )
 
+structured_llm = llm.with_structured_output(LLMResponse, method="json_mode")
 
-# =====================================
-# HELPERS
-# =====================================
+_SYSTEM_PROMPT = """You are an expert DSA (Data Structures & Algorithms) tutor helping users solve coding interview problems.
 
-def _enforce_groq_strict_schema(schema: dict) -> dict:
-    if isinstance(schema, dict):
-        if schema.get("type") == "object" or "properties" in schema:
-            schema["additionalProperties"] = False
-            all_keys = list(schema.get("properties", {}).keys())
-            if all_keys:
-                schema["required"] = all_keys
-        for value in schema.values():
-            if isinstance(value, dict):
-                _enforce_groq_strict_schema(value)
-            elif isinstance(value, list):
-                for item in value:
-                    if isinstance(item, dict):
-                        _enforce_groq_strict_schema(item)
-    return schema
+Guidelines:
+- Help users understand DSA concepts through guided, Socratic teaching.
+- Explain mistakes clearly and constructively.
+- When asked for hints, give progressive guidance — do NOT jump straight to the full solution.
+- When explicitly asked for a solution, provide clean, well-commented code.
+- Always provide complexity analysis (time and space) when relevant.
+
+Response fields:
+- `response`: Always fill this with a conversational, helpful reply.
+- `code_suggestion`: Provide code here when correcting, hinting with code, or giving a full solution.
+- `explanation`: Use for step-by-step breakdowns of an approach or algorithm.
+- `user_misunderstanding`: Flag any conceptual errors the user seems to have (keep it constructive).
+
+Always respond in valid JSON using the required response fields."""
 
 
-def pydantic_to_groq_schema(model: type[BaseModel]) -> dict:
-    schema = model.model_json_schema()
-    _enforce_groq_strict_schema(schema)
-    return {
-        "type": "json_schema",
-        "json_schema": {
-            "name": model.__name__,
-            "strict": True,
-            "schema": schema
-        }
-    }
+def generate_dsa_response(user_request: UserRequest) -> LLMResponse:
+    messages = [SystemMessage(content=_SYSTEM_PROMPT)]
 
+    # Reconstruct prior conversation turns as actual LangChain messages
+    # so the LLM receives full conversational context, not a text dump.
+    if user_request.llm_history:
+        for entry in user_request.llm_history:
+            role = entry.get("role", "")
+            content = entry.get("content", "")
+            if role == "user":
+                messages.append(HumanMessage(content=content))
+            elif role == "assistant":
+                messages.append(AIMessage(content=content))
 
-# =====================================
-# STRUCTURED OUTPUT SCHEMAS
-# =====================================
-
-class FeedbackSchema(BaseModel):
-    appreciation: Optional[str] = None
-    time_complexity: Optional[str] = None
-    hints: List[str]
-
-    model_config = {"extra": "forbid"}
-
-
-class SolutionSchema(BaseModel):
-    explanation: str
-    code: str
-    time_complexity: str
-    space_complexity: str
-
-    model_config = {"extra": "forbid"}
-
-
-# =====================================
-# STATE
-# =====================================
-
-class TutorState(TypedDict):
-    question: str
-    user_code: Optional[str]
-    prompt: Optional[str]
-    raw_response: Optional[str]
-    feedback_output: Optional[dict]
-    solution_output: Optional[dict]
-
-
-# =====================================
-# PROMPT NODES
-# =====================================
-
-def build_feedback_prompt(state: TutorState):
-    prompt = f"""
-You are an AI tutor specializing in coding interviews and competitive programming.
-
-Your job is to analyze the user's question and code.
-
-Evaluation Rules:
-
-1. Understand the problem and user code.
-
-2. If correct and optimal:
-- Appreciate the solution
-- Give time complexity
-- Do NOT provide hints
-
-3. If incorrect or suboptimal:
-Provide exactly 3 levels of hints:
-- Level 1 Hint: General guidance
-- Level 2 Hint: More specific direction
-- Level 3 Hint: Nearly complete approach
-
-DO NOT provide full code solution.
-
-Problem:
-{state["question"]}
-
-User Code:
-```python
-{state["user_code"]}
-```
-"""
-    return {"prompt": prompt}
-
-
-def build_solution_prompt(state: TutorState):
-    prompt = f"""
-You are an AI coding tutor.
-
-The user has already seen all hints and now wants the optimal solution.
-
-Problem:
-{state["question"]}
-"""
-    return {"prompt": prompt}
-
-
-# =====================================
-# LLM NODES
-# =====================================
-
-def call_feedback_llm(state: TutorState):
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[{"role": "user", "content": state["prompt"]}],
-        temperature=0.2,
-        response_format=pydantic_to_groq_schema(FeedbackSchema)
+    # Current user turn
+    messages.append(
+        HumanMessage(
+            content=(
+                f"Problem:\n{user_request.question}\n\n"
+                f"My current code:\n```\n{user_request.current_code}\n```\n\n"
+                f"My question / request:\n{user_request.prompt or 'Please review my code and help me.'}"
+            )
+        )
     )
-    content = response.choices[0].message.content
-    validated = FeedbackSchema.model_validate_json(content)
-    return {
-        "raw_response": content,
-        "feedback_output": validated.model_dump()
-    }
 
-
-def call_solution_llm(state: TutorState):
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[{"role": "user", "content": state["prompt"]}],
-        temperature=0.2,
-        response_format=pydantic_to_groq_schema(SolutionSchema)
-    )
-    content = response.choices[0].message.content
-    validated = SolutionSchema.model_validate_json(content)
-    return {
-        "raw_response": content,
-        "solution_output": validated.model_dump()
-    }
-
-
-# =====================================
-# FEEDBACK GRAPH
-# =====================================
-
-feedback_builder = StateGraph(TutorState)
-feedback_builder.add_node("build_feedback_prompt", build_feedback_prompt)
-feedback_builder.add_node("call_feedback_llm", call_feedback_llm)
-feedback_builder.set_entry_point("build_feedback_prompt")
-feedback_builder.add_edge("build_feedback_prompt", "call_feedback_llm")
-feedback_builder.add_edge("call_feedback_llm", END)
-feedback_graph = feedback_builder.compile()
-
-
-# =====================================
-# SOLUTION GRAPH
-# =====================================
-
-solution_builder = StateGraph(TutorState)
-solution_builder.add_node("build_solution_prompt", build_solution_prompt)
-solution_builder.add_node("call_solution_llm", call_solution_llm)
-solution_builder.set_entry_point("build_solution_prompt")
-solution_builder.add_edge("build_solution_prompt", "call_solution_llm")
-solution_builder.add_edge("call_solution_llm", END)
-solution_graph = solution_builder.compile()
-
-
-# =====================================
-# PUBLIC FUNCTIONS
-# =====================================
-
-def get_full_feedback_with_hints(question: str, user_code: str) -> dict:
-    result = feedback_graph.invoke({
-        "question": question,
-        "user_code": user_code
-    })
-    return result["feedback_output"]
-
-
-def get_optimal_solution(question: str) -> dict:
-    result = solution_graph.invoke({
-        "question": question,
-        "user_code": ""
-    })
-    return result["solution_output"]
+    return structured_llm.invoke(messages)

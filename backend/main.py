@@ -7,8 +7,8 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.schemas import HintsRequest, RunRequest, SolutionRequest
-from backend.tutor import get_full_feedback_with_hints, get_optimal_solution
+from backend.schemas import RunRequest, UserRequest
+from backend.tutor import generate_dsa_response
 
 LEETCODE_GRAPHQL = "https://leetcode.com/graphql"
 _LEETCODE_HEADERS = {
@@ -96,40 +96,21 @@ def leetcode_problem(title_slug: str):
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@app.post("/hints")
-def hints(request: HintsRequest):
+@app.post("/ask-dsa")
+def ask_dsa(request: UserRequest):
     """
-    Analyse user code against the problem and return structured feedback.
+    Conversational DSA tutor endpoint.
 
-    Response shape (FeedbackSchema):
+    Response shape (LLMResponse):
         {
-            "appreciation": str | null,
-            "time_complexity": str | null,
-            "hints": [str, ...]
+            "response": str,
+            "code_suggestion": str | null,
+            "user_misunderstanding": str | null,
+            "explanation": str | null
         }
     """
     try:
-        result = get_full_feedback_with_hints(request.question, request.user_code)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    return result
-
-
-@app.post("/solution")
-def solution(request: SolutionRequest):
-    """
-    Return the optimal solution for the given problem.
-
-    Response shape (SolutionSchema):
-        {
-            "explanation": str,
-            "code": str,
-            "time_complexity": str,
-            "space_complexity": str
-        }
-    """
-    try:
-        result = get_optimal_solution(request.question)
+        result = generate_dsa_response(request)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return result

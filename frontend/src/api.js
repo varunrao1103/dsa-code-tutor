@@ -1,27 +1,20 @@
-const BASE = ''  // Vite proxy routes /hints, /solution, /run, /leetcode to localhost:8000
+const BASE = ''  // Vite proxy routes /ask-dsa, /run, /leetcode to localhost:8000
 
-export async function getHints(question, userCode) {
-  const res = await fetch(`${BASE}/hints`, {
+export async function askDSA(question, currentCode, prompt, llmHistory = []) {
+  const res = await fetch(`${BASE}/ask-dsa`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, user_code: userCode }),
+    body: JSON.stringify({
+      userId: 'anonymous',
+      question,
+      current_code: currentCode,
+      prompt,
+      llm_history: llmHistory,
+    }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? 'Failed to get hints')
-  }
-  return res.json()
-}
-
-export async function getSolution(question) {
-  const res = await fetch(`${BASE}/solution`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? 'Failed to get solution')
+    throw new Error(err.detail ?? 'Failed to get AI response')
   }
   return res.json()
 }

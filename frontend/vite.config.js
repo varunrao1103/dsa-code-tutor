@@ -6,12 +6,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/hints': 'http://localhost:8000',
-      '/solution': 'http://localhost:8000',
+      '/ask-dsa': 'http://localhost:8000',
       '/run': 'http://localhost:8000',
       '/leetcode': 'http://localhost:8000',
-      '/auth': 'http://localhost:8000',
-      '/submissions': 'http://localhost:8000',
     },
   },
 })
